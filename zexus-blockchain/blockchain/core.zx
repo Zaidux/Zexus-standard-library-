@@ -1,0 +1,119 @@
+// Cryptographic primitives and hash functions
+external action keccak256(data: list) -> list from "crypto_backend"
+external action secp256k1_sign(msg_hash: list, private_key: list) -> list from "crypto_backend"
+external action secp256k1_verify(msg_hash: list, signature: list, public_key: list) -> boolean from "crypto_backend"
+external action secp256k1_recover(msg_hash: list, signature: list) -> list from "crypto_backend"
+
+// Blockchain core types
+export enum ChainType {
+    ZIVER, ETHEREUM, BSC, TON, POLYGON, ARBITRUM, SOLANA, BITCOIN
+}
+
+export enum TransactionStatus {
+    PENDING, CONFIRMED, FAILED, DROPPED
+}
+
+export enum ConsensusAlgorithm {
+    PROOF_OF_WORK, PROOF_OF_STAKE, DELEGATED_POS, PRACTICAL_BFT
+}
+
+// Core blockchain structures
+event BlockMined {
+    block_number: integer,
+    block_hash: string,
+    miner: Address,
+    timestamp: integer,
+    transaction_count: integer
+}
+
+event TransactionAdded {
+    tx_hash: string,
+    from: Address,
+    to: Address,
+    value: integer,
+    status: TransactionStatus
+}
+
+// Address type with validation
+contract Address {
+    persistent storage address: string
+    persistent storage chain: ChainType
+    
+    action init(addr: string, chain_type: ChainType) {
+        require(this.validate_address(addr, chain_type), "Invalid address for chain")
+        this.address = addr
+        this.chain = chain_type
+    }
+    
+    action validate_address(addr: string, chain_type: ChainType) -> boolean {
+        if chain_type == ChainType.ETHEREUM or chain_type == ChainType.ZIVER {
+            return len(addr) == 42 and addr.startsWith("0x") and this.is_hex(addr[2:])
+        } else if chain_type == ChainType.BITCOIN {
+            return len(addr) >= 26 and len(addr) <= 35
+        } else if chain_type == ChainType.TON {
+            return addr.startsWith("EQ") and len(addr) == 48
+        }
+        return true // For other chains, basic validation
+    }
+    
+    action is_hex(s: string) -> boolean {
+        let hex_chars = "0123456789abcdefABCDEF"
+        for each char in s {
+            if not hex_chars.contains(char) {
+                return false
+            }
+        }
+        return true
+    }
+    
+    action toString() -> string { return this.address }
+    action get_chain() -> ChainType { return this.chain }
+}
+
+// Cryptographic key pair
+contract KeyPair {
+    persistent storage private_key: list  // Stored encrypted
+    persistent storage public_key: list
+    persistent storage address: Address
+    persistent storage chain: ChainType
+    
+    action generate(chain_type: ChainType) {
+        let (priv, pub) = generate_keypair(chain_type)
+        this.private_key = encrypt_key(priv)  // Always store encrypted
+        this.public_key = pub
+        this.chain = chain_type
+        this.address = this.derive_address(pub, chain_type)
+    }
+    
+    action sign_message(message: list) -> list {
+        let decrypted_priv = decrypt_key(this.private_key)
+        let msg_hash = keccak256(message)
+        return secp256k1_sign(msg_hash, decrypted_priv)
+    }
+    
+    action sign_transaction(tx: Transaction) -> list {
+        let tx_hash = tx.hash()
+        return this.sign_message(tx_hash)
+    }
+    
+    action derive_address(pub_key: list, chain_type: ChainType) -> Address {
+        if chain_type == ChainType.ETHEREUM or chain_type == ChainType.ZIVER {
+            let hash = keccak256(pub_key[1:])  // Remove prefix
+            let address_hex = "0x" + bytes_to_hex(hash[12:])
+            return Address{address: address_hex, chain: chain_type}
+        } else if chain_type == ChainType.TON {
+            // TON-specific address derivation
+            let ton_address = derive_ton_address(pub_key)
+            return Address{address: ton_address, chain: chain_type}
+        }
+        throw "Unsupported chain for address derivation"
+    }
+    
+    action get_address() -> Address { return this.address }
+}
+
+// External crypto functions
+external action generate_keypair(chain_type: ChainType) -> (list, list) from "crypto_backend"
+external action encrypt_key(data: list) -> list from "crypto_backend" 
+external action decrypt_key(encrypted: list) -> list from "crypto_backend"
+external action derive_ton_address(public_key: list) -> string from "ton_backend"
