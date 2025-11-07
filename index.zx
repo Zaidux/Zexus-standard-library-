@@ -1,15 +1,14 @@
-// Zexus Standard Library - Main Entry Point
-// Unified API for all standard library modules
+// Zexus Standard Library - Complete Unified API
+// Single import for all standard library modules
 
-// Math Library
-export use "../zexus-math/index" as math
+// Math Library - Advanced mathematical computing
+export use "./zexus-math/index" as math
 
-// Future standard libraries will be added here:
-// export use "./networking/index" as net
-// export use "./database/index" as db
-// export use "./web/index" as web
-// export use "./ui/index" as ui
-// export use "./blockchain/index" as blockchain
+// Network Library - HTTP, WebSockets, TCP/UDP, DNS
+export use "./zexus-network/index" as net
+
+// Blockchain Library - AI, Quantum, Multi-chain, DeFi
+export use "./zexus-blockchain/index" as blockchain
 
 // Core utilities that work across all modules
 export action version() -> string {
@@ -18,25 +17,53 @@ export action version() -> string {
 
 export action available_modules() -> list {
     return [
-        "math - Comprehensive mathematical computing",
-        "networking - Network operations (coming soon)",
-        "database - Database connectivity (coming soon)", 
-        "web - Web framework utilities (coming soon)",
-        "ui - User interface components (coming soon)",
-        "blockchain - Blockchain utilities (coming soon)"
+        "math - Advanced mathematical computing (complex numbers, linear algebra, calculus, ML)",
+        "networking - Comprehensive network operations (HTTP, WebSockets, TCP/UDP, DNS)", 
+        "blockchain - Revolutionary blockchain with AI, quantum resistance, multi-chain support"
     ]
+}
+
+export action module_info(module_name: string) -> map {
+    let modules = {
+        "math": {
+            version: math.VERSION,
+            features: math.FEATURES,
+            description: "Enterprise-grade mathematical computing library"
+        },
+        "networking": {
+            version: net.VERSION, 
+            features: ["HTTP Client", "WebSockets", "TCP/UDP Sockets", "DNS", "Security"],
+            description: "Comprehensive networking library with async support"
+        },
+        "blockchain": {
+            version: blockchain.VERSION,
+            features: blockchain.FEATURES,
+            description: "Next-generation blockchain with AI and quantum features"
+        }
+    }
+    
+    return modules.get(module_name, {error: "Module not found"})
 }
 
 // Cross-module configuration
 persistent storage STD_CONFIG: map = {
     debug: false,
     performance_mode: "balanced",
-    log_level: "info"
+    log_level: "info",
+    enable_ai_features: true,
+    quantum_security: true
 }
 
 export action configure(options: map) {
     for each key in options {
         STD_CONFIG[key] = options[key]
+    }
+    
+    // Propagate configuration to modules
+    if options.has("debug") {
+        math.set_math_config("debug", options.debug)
+        net.set_network_config("debug", options.debug) 
+        blockchain.set_blockchain_config("debug", options.debug)
     }
 }
 
@@ -59,29 +86,29 @@ export action handle_error(module: string, operation: string, error: string) {
         error: error,
         timestamp: time_now()
     }
-    
+
     if STD_CONFIG.debug {
         print("[" + module + "] ERROR in " + operation + ": " + error)
     }
 }
 
-// Performance monitoring
+// Performance monitoring across all modules
 export action async benchmark(operation: action, iterations: integer = 1) -> map {
     let times = []
     let results = []
-    
+
     for each i in range(0, iterations) {
         let start = time_now()
         let result = operation()
         let end = time_now()
-        
+
         times.push(end - start)
         results.push(result)
     }
-    
+
     let avg_time = math.mean(times)
     let std_dev = math.standard_deviation(times)
-    
+
     return {
         average_time: avg_time,
         standard_deviation: std_dev,
@@ -92,14 +119,32 @@ export action async benchmark(operation: action, iterations: integer = 1) -> map
     }
 }
 
+// Cross-module utilities
+export action async sleep(seconds: float) {
+    await net.sleep(seconds)
+}
+
+export action generate_id() -> string {
+    return bytes_to_hex(math.random_bytes(16))
+}
+
 // Library initialization
 action init_standard_library() {
-    print("Zexus Standard Library initialized")
-    print("Available modules:")
-    for each module_info in available_modules() {
-        print("  • " + module_info)
+    print("🚀 Zexus Standard Library v1.0.0 initialized!")
+    print("📦 Available modules:")
+    
+    let modules = available_modules()
+    for each i in range(0, len(modules)) {
+        print("   " + string(i + 1) + ". " + modules[i])
     }
-    print("Use: use 'zexus-standard-library' as std")
+    
+    print("")
+    print("💡 Usage examples:")
+    print("   use 'zexus-standard-library' as std")
+    print("   use 'zexus-standard-library/math' as math (individual module)")
+    print("   use 'zexus-standard-library/blockchain' as blockchain")
+    print("")
+    print("🔧 Configuration: std.configure({debug: true, performance_mode: 'high'})")
 }
 
 // Auto-initialize
