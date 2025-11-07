@@ -1,0 +1,36 @@
+{
+  "name": "zexus-standard-library",
+  "version": "1.0.0",
+  "description": "Complete standard library suite for Zexus programming language",
+  "author": "Zexus Team",
+  "license": "MIT",
+  "workspaces": [
+    "zexus-math",
+    "zexus-network", 
+    "zexus-blockchain"
+  ],
+  "exports": {
+    ".": "./index.zx",
+    "./math": "./zexus-math/index.zx",
+    "./network": "./zexus-network/index.zx",
+    "./blockchain": "./zexus-blockchain/index.zx"
+  },
+  "dependencies": {
+    "zexus-math": "workspace:*",
+    "zexus-network": "workspace:*",
+    "zexus-blockchain": "workspace:*"
+  },
+  "keywords": [
+    "zexus",
+    "standard-library",
+    "math",
+    "networking",
+    "blockchain",
+    "ai",
+    "quantum"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zexus-lang/zexus-standard-library"
+  }
+}
