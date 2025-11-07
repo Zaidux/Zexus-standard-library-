@@ -6,16 +6,22 @@ A comprehensive mathematical standard library for the Zexus programming language
 
 ### **Core Mathematics**
 - **Complex Numbers**: Full complex arithmetic with polar coordinates
-- **Linear Algebra**: Matrices, determinants, inverses, eigenvalues
+- **Linear Algebra**: Matrices, determinants, inverses, eigenvalues, SVD
 - **Calculus**: Derivatives, integrals, root finding, differential equations
 - **Special Functions**: Gamma, Bessel, Error functions
 
 ### **Advanced Computing**
 - **Numerical Optimization**: Gradient descent, linear programming
-- **Signal Processing**: FFT, digital filters, convolution
+- **Signal Processing**: FFT, digital filters, convolution, windowing
 - **Machine Learning**: Neural networks, clustering, regression
 - **Cryptography**: RSA, elliptic curves, modular arithmetic
 - **Geometric Algebra**: Multivector calculus, rotations
+
+### **Expert Features**
+- **Numerical Analysis**: Condition numbers, pseudo-inverses, stability
+- **Symbolic Mathematics**: Computer algebra system, symbolic differentiation
+- **Mathematical Physics**: Quantum mechanics, general relativity
+- **High-Performance**: GPU acceleration, cache optimization, sparse matrices
 
 ### **Zexus-Specific Features**
 - **Async Math**: Parallel computation with async/await
@@ -66,15 +72,20 @@ let area = math.integrate(f, 0, 1)      // ~0.333
 Advanced Applications
 
 ```zexus
-// Signal processing
+// Signal processing with windowing
 let signal = [sin(2*math.PI*5*t/64) for t in range(0, 64)]
-let spectrum = math.fft(signal)
+let spectrum = math.fft_with_window(signal, "hann")
 
-// Machine learning
+// Machine learning clustering
 let clusters = math.kmeans(data_points, 3)
 
-// Cryptography
+// Cryptography - RSA keys
 let keys = math.generate_rsa_keys(2048)
+
+// Symbolic mathematics
+let x = math.SymbolicVariable{name: "x"}
+let expr = math.SymbolicAdd{left: x, right: math.SymbolicConstant{value: 1}}
+let derivative = math.symbolic_derivative(expr, "x")  // 1
 ```
 
 Async Mathematical Computing
@@ -95,21 +106,39 @@ action async real_time_analysis() {
 }
 ```
 
-📚 Modules
+📚 Complete Module Structure
 
-· core: Constants, basic utilities
-· complex: Complex number system
-· linalg: Linear algebra
-· calculus: Differentiation, integration
-· optimization: Numerical optimization
-· signal: Signal processing
-· diffeq: Differential equations
-· ml: Machine learning
-· crypto: Cryptographic mathematics
-· geometric: Geometric algebra
-· async: Async mathematical operations
-· stats: Statistics and probability
-· special: Special functions
+```
+zexus-math/
+├── index.zx                      # Main entry point
+├── README.md                     # Documentation
+├── math/
+│   ├── core.zx                   # Constants, basic math, utilities
+│   ├── complex.zx                # Complex number system
+│   ├── linalg.zx                 # Linear algebra fundamentals
+│   ├── calculus.zx               # Differentiation, integration
+│   ├── optimization.zx           # Numerical optimization
+│   ├── signal.zx                 # Signal processing, FFT, filters
+│   ├── diffeq.zx                 # Differential equations
+│   ├── ml.zx                     # Machine learning primitives
+│   ├── crypto.zx                 # Cryptographic mathematics
+│   ├── geometric.zx              # Geometric algebra
+│   ├── async.zx                  # Async math operations
+│   ├── stats.zx                  # Statistics and probability
+│   ├── special.zx                # Special functions
+│   ├── numerical.zx              # Numerical stability, error analysis
+│   ├── advanced_linalg.zx        # SVD, eigenvalues, sparse matrices
+│   ├── interpolation.zx          # Interpolation, approximation
+│   ├── physics.zx                # Mathematical physics
+│   ├── symbolic.zx               # Computer algebra system
+│   ├── performance.zx            # High-performance math, GPU
+│   └── validation.zx             # Testing & validation suite
+└── examples/
+    ├── basic_usage.zx            # Basic examples
+    ├── advanced_calculator.zx    # Advanced usage
+    ├── expert_calculator.zx      # Expert-level features
+    └── unified_usage.zx          # Complete integration examples
+```
 
 🎨 Visualization
 
@@ -142,19 +171,37 @@ Event-Driven Computation
 
 ```zexus
 // Track convergence progress
-math.on_event("convergence", action(event) {
-    print("Iteration " + event.iteration + ": error=" + event.error)
+math.on_math_event("progress", action(event) {
+    print("Operation: " + event.operation + " - " + string(event.progress * 100) + "%")
 })
 
 let solution = await math.iterative_solver(f, initial_guess)
 ```
 
-📈 Performance
+High-Performance Computing
+
+```zexus
+// Sparse matrix operations for large datasets
+let A = math.sparse_matrix(10000, 10000)
+A.set(0, 0, 1.0)
+A.set(9999, 9999, 1.0)
+
+// Cache-optimized matrix multiplication
+let C = math.cache_optimized_matmul(A, B, 64)
+
+// GPU acceleration (when available)
+math.set_math_config("enable_gpu", true)
+let result = math.gpu_matrix_multiply(large_A, large_B)
+```
+
+📈 Performance Features
 
 · Optimized algorithms for numerical stability
 · Async parallel computation for heavy workloads
-· Memory-efficient matrix operations
+· Memory-efficient matrix operations with sparse support
 · Real-time capable signal processing
+· GPU acceleration for large-scale computations
+· Cache-aware algorithms for optimal performance
 
 🤝 Contributing
 
@@ -163,7 +210,24 @@ let solution = await math.iterative_solver(f, initial_guess)
 3. Add event emission for long-running operations
 4. Provide comprehensive mathematical documentation
 5. Include usage examples
+6. Add validation tests for numerical stability
 
 📄 License
 
 MIT License - Feel free to use in your Zexus projects!
+
+---
+
+Zexus Math Library v2.0.0 - Enterprise-grade mathematical computing for Zexus! 🚀
+
+Now with advanced numerical analysis, symbolic mathematics, and high-performance computing capabilities.
+
+```
+
+## **Key Points About Zexus Async/Sync:**
+
+1. **Synchronous**: Default, blocking, predictable
+2. **Asynchronous**: Opt-in with `async/await`, non-blocking, concurrent  
+3. **Seamless Integration**: Can mix sync and async code
+4. **Real Concurrency**: Not just I/O - true parallel execution
+5. **Events + Async**: Reactive programming patterns
