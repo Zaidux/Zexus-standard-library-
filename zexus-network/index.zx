@@ -1,11 +1,14 @@
 // Zexus Network Library - Main Entry Point
-export use "./core" as core
-export use "./http" as http
-export use "./websocket" as websocket
-export use "./socket" as socket
-export use "./server" as server
-export use "./dns" as dns
-export use "./security" as security
+// This file exports the entire network library as a unified API
+
+// Import all modules from network directory
+export use "./network/core" as core
+export use "./network/http" as http
+export use "./network/websocket" as websocket
+export use "./network/socket" as socket
+export use "./network/server" as server
+export use "./network/dns" as dns
+export use "./network/security" as security
 
 // Protocol exports
 export enum Protocol = core.Protocol
@@ -57,8 +60,56 @@ export action tcp_socket() -> TCPSocket {
     return TCPSocket{}
 }
 
+export action udp_socket() -> UDPSocket {
+    return UDPSocket{}
+}
+
 export action tcp_server() -> TCPServer {
     return TCPServer{}
+}
+
+export action http_server() -> HttpServer {
+    return HttpServer{}
+}
+
+export action secure_socket(cert_file: string = "", key_file: string = "") -> SecureSocket {
+    return SecureSocket{cert_file: cert_file, key_file: key_file}
+}
+
+export action rate_limiter(window_seconds: integer = 60, max_requests: integer = 100) -> RateLimiter {
+    return RateLimiter{window_seconds: window_seconds, max_requests: max_requests}
+}
+
+// Common HTTP methods as async actions
+export action async http_get(url: string, headers: map = {}) -> http.HttpResponse {
+    let client = http_client()
+    return await client.get(url, headers)
+}
+
+export action async http_post(url: string, data: any, headers: map = {}) -> http.HttpResponse {
+    let client = http_client()
+    return await client.post(url, data, headers)
+}
+
+export action async http_put(url: string, data: any, headers: map = {}) -> http.HttpResponse {
+    let client = http_client()
+    return await client.put(url, data, headers)
+}
+
+export action async http_delete(url: string, headers: map = {}) -> http.HttpResponse {
+    let client = http_client()
+    return await client.delete(url, headers)
+}
+
+// JSON-specific HTTP shortcuts
+export action async http_get_json(url: string, headers: map = {}) -> map {
+    let client = json_http_client()
+    return await client.get_json(url, headers)
+}
+
+export action async http_post_json(url: string, data: map, headers: map = {}) -> map {
+    let client = json_http_client()
+    return await client.post_json(url, data, headers)
 }
 
 // Configuration
@@ -72,6 +123,13 @@ export action get_network_config(key: string) -> any {
     return NETWORK_CONFIG.get(key, null)
 }
 
+// Async sleep utility for network operations
+export action async sleep(seconds: float) {
+    await internal_sleep(integer(seconds * 1000))
+}
+
+external action async internal_sleep(ms: integer) from "system"
+
 // Version info
 export let VERSION: string = "1.0.0"
 export let AUTHOR: string = "Zexus Network Team"
@@ -84,4 +142,5 @@ action init() {
     print("All operations support async/await for non-blocking networking")
 }
 
+// Auto-initialize
 init()
