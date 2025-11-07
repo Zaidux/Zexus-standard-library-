@@ -1,0 +1,106 @@
+// Zexus Standard Library - Main Entry Point
+// Unified API for all standard library modules
+
+// Math Library
+export use "../zexus-math/index" as math
+
+// Future standard libraries will be added here:
+// export use "./networking/index" as net
+// export use "./database/index" as db
+// export use "./web/index" as web
+// export use "./ui/index" as ui
+// export use "./blockchain/index" as blockchain
+
+// Core utilities that work across all modules
+export action version() -> string {
+    return "Zexus Standard Library v1.0.0"
+}
+
+export action available_modules() -> list {
+    return [
+        "math - Comprehensive mathematical computing",
+        "networking - Network operations (coming soon)",
+        "database - Database connectivity (coming soon)", 
+        "web - Web framework utilities (coming soon)",
+        "ui - User interface components (coming soon)",
+        "blockchain - Blockchain utilities (coming soon)"
+    ]
+}
+
+// Cross-module configuration
+persistent storage STD_CONFIG: map = {
+    debug: false,
+    performance_mode: "balanced",
+    log_level: "info"
+}
+
+export action configure(options: map) {
+    for each key in options {
+        STD_CONFIG[key] = options[key]
+    }
+}
+
+export action get_config(key: string) -> any {
+    return STD_CONFIG.get(key, null)
+}
+
+// Error handling standardization
+event LibraryError {
+    module: string,
+    operation: string,
+    error: string,
+    timestamp: integer
+}
+
+export action handle_error(module: string, operation: string, error: string) {
+    emit LibraryError {
+        module: module,
+        operation: operation,
+        error: error,
+        timestamp: time_now()
+    }
+    
+    if STD_CONFIG.debug {
+        print("[" + module + "] ERROR in " + operation + ": " + error)
+    }
+}
+
+// Performance monitoring
+export action async benchmark(operation: action, iterations: integer = 1) -> map {
+    let times = []
+    let results = []
+    
+    for each i in range(0, iterations) {
+        let start = time_now()
+        let result = operation()
+        let end = time_now()
+        
+        times.push(end - start)
+        results.push(result)
+    }
+    
+    let avg_time = math.mean(times)
+    let std_dev = math.standard_deviation(times)
+    
+    return {
+        average_time: avg_time,
+        standard_deviation: std_dev,
+        min_time: math.min(times),
+        max_time: math.max(times),
+        iterations: iterations,
+        results: results
+    }
+}
+
+// Library initialization
+action init_standard_library() {
+    print("Zexus Standard Library initialized")
+    print("Available modules:")
+    for each module_info in available_modules() {
+        print("  • " + module_info)
+    }
+    print("Use: use 'zexus-standard-library' as std")
+}
+
+// Auto-initialize
+init_standard_library()
