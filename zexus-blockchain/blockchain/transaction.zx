@@ -1,0 +1,208 @@
+// Transaction types and protocols
+protocol Transaction {
+    action hash() -> list
+    action sign(signature: list) -> boolean
+    action verify() -> boolean
+    action execute() -> boolean
+}
+
+contract BasicTransaction implements Transaction {
+    persistent storage nonce: integer
+    persistent storage from: Address
+    persistent storage to: Address
+    persistent storage value: integer
+    persistent storage gas_limit: integer
+    persistent storage gas_price: integer
+    persistent storage data: list
+    persistent storage signature: list
+    persistent storage chain_id: integer
+    
+    action init(from_addr: Address, to_addr: Address, amount: integer, chain: ChainType) {
+        this.from = from_addr
+        this.to = to_addr
+        this.value = amount
+        this.chain_id = this.get_chain_id(chain)
+        this.nonce = 0
+        this.gas_limit = 21000
+        this.gas_price = 20  // gwei
+    }
+    
+    action hash() -> list {
+        let tx_data = [
+            this.chain_id,
+            this.nonce,
+            this.gas_price,
+            this.gas_limit,
+            this.to.toString(),
+            this.value,
+            this.data
+        ]
+        return keccak256(serialize(tx_data))
+    }
+    
+    action sign(signature: list) -> boolean {
+        this.signature = signature
+        return this.verify()
+    }
+    
+    action verify() -> boolean {
+        let tx_hash = this.hash()
+        let recovered_pubkey = secp256k1_recover(tx_hash, this.signature)
+        let recovered_address = derive_address_from_pubkey(recovered_pubkey, this.from.get_chain())
+        return recovered_address == this.from.toString()
+    }
+    
+    action execute() -> boolean {
+        if not this.verify() {
+            return false
+        }
+        
+        // Execute transfer logic
+        emit TransactionExecuted {
+            from: this.from,
+            to: this.to,
+            value: this.value,
+            success: true
+        }
+        
+        return true
+    }
+    
+    action get_chain_id(chain: ChainType) -> integer {
+        let chain_ids = {
+            ZIVER: 1337,
+            ETHEREUM: 1,
+            BSC: 56,
+            POLYGON: 137,
+            ARBITRUM: 42161
+        }
+        return chain_ids.get(chain, 1)
+    }
+}
+
+// Smart contract transaction
+contract ContractTransaction extends BasicTransaction {
+    persistent storage contract_address: Address
+    persistent storage method: string
+    persistent storage params: list
+    
+    action init(contract_addr: Address, method_name: string, parameters: list, chain: ChainType) {
+        super.init(contract_addr, contract_addr, 0, chain)  // to is contract itself
+        this.contract_address = contract_addr
+        this.method = method_name
+        this.params = parameters
+        this.data = this.encode_function_call(method_name, parameters)
+    }
+    
+    action encode_function_call(method: string, params: list) -> list {
+        // ABI encoding implementation
+        let method_hash = keccak256(string_to_bytes(method))[0:4]
+        let encoded_params = this.abi_encode_params(params)
+        return method_hash + encoded_params
+    }
+    
+    action abi_encode_params(params: list) -> list {
+        // Complex ABI encoding logic
+        let result = []
+        for each param in params {
+            if type(param) == "integer" {
+                result = result + this.encode_uint256(param)
+            } else if type(param) == "string" {
+                result = result + this.encode_string(param)
+            } else if type(param) == "address" {
+                result = result + this.encode_address(param)
+            }
+        }
+        return result
+    }
+    
+    action execute() -> boolean {
+        if not this.verify() {
+            return false
+        }
+        
+        // Execute contract method
+        let contract = get_contract(this.contract_address)
+        let result = contract.execute_method(this.method, this.params)
+        
+        emit ContractMethodExecuted {
+            contract: this.contract_address,
+            method: this.method,
+            params: this.params,
+            result: result,
+            success: result != null
+        }
+        
+        return result != null
+    }
+}
+
+// Transaction pool for mempool management
+contract TransactionPool {
+    persistent storage pending_txs: Map<string, Transaction> = {}
+    persistent storage max_pool_size: integer = 10000
+    persistent storage min_gas_price: integer = 1
+    
+    action async add_transaction(tx: Transaction) -> boolean {
+        if len(this.pending_txs) >= this.max_pool_size {
+            // Evict lowest gas price transaction
+            this.evict_low_priority()
+        }
+        
+        if not tx.verify() {
+            return false
+        }
+        
+        let tx_hash = bytes_to_hex(tx.hash())
+        this.pending_txs[tx_hash] = tx
+        
+        emit TransactionAdded {
+            tx_hash: tx_hash,
+            from: tx.from,
+            to: tx.to,
+            value: tx.value,
+            status: TransactionStatus.PENDING
+        }
+        
+        return true
+    }
+    
+    action get_transactions_for_block(block_gas_limit: integer) -> list {
+        let selected_txs = []
+        let total_gas = 0
+        
+        // Sort by gas price (descending) for miner profitability
+        let sorted_txs = this.sort_by_gas_price()
+        
+        for each tx in sorted_txs {
+            if total_gas + tx.gas_limit <= block_gas_limit {
+                selected_txs.push(tx)
+                total_gas = total_gas + tx.gas_limit
+            } else {
+                break
+            }
+        }
+        
+        return selected_txs
+    }
+    
+    action sort_by_gas_price() -> list {
+        let txs_list = []
+        for each tx_hash in this.pending_txs {
+            txs_list.push(this.pending_txs[tx_hash])
+        }
+        
+        return list_sort(txs_list, action(a, b) {
+            return b.gas_price - a.gas_price  // Descending order
+        })
+    }
+    
+    action evict_low_priority() {
+        let sorted = this.sort_by_gas_price()
+        if len(sorted) > 0 {
+            let lowest_tx = sorted[len(sorted) - 1]
+            let tx_hash = bytes_to_hex(lowest_tx.hash())
+            this.pending_txs.remove(tx_hash)
+        }
+    }
+}
